@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:name=".iSiloApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.iSilo">
+
+        <activity
+            android:name=".ui.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.iSilo.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.iSiloActivityGroup"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.doclist.DocListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.reader.ReadActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.bookmark.AddBookmarkActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.bookmark.EditBookmarkActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.bookmark.EditBookmarksActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.annotation.AnnotationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.annotation.AnnotationsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.annotation.AnnotationSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.theme.ColorNameActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.theme.ColorPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.theme.EditColorThemeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.download.DownloadActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.download.DownloadFromDropboxActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.download.DownloadFromLibraryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DocListOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DLIconsOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DLListOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DLModeOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DLSettingsOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.EditFavoriteFoldersActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.EditWebBookmarksActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.EditTextWithSeekBar"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.settings.CategoriesActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.CopyFileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.RenameFileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.FavoriteFolderAliasActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.settings.DocumentInformationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.settings.DocumentPasswordActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.settings.DocumentRegCodeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.settings.DocumentMessageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.reader.FindActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo" />
+
+        <activity
+            android:name=".ui.AboutActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.TrialExpiredActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+        <activity
+            android:name=".ui.TrialPeriodActivity"
+            android:exported="false"
+            android:theme="@style/Theme.iSilo.Dialog" />
+
+    </application>
+</manifest>
