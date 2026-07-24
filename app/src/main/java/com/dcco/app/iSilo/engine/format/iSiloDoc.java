@@ -307,12 +307,14 @@ public class iSiloDoc extends DocFormat {
     }
 
     private int flagToStyleId(int flag) {
-        int styleId = 0;
-        if ((flag & 0x10) != 0) styleId += 1;
-        if ((flag & 0x20) != 0) styleId += 2;
-        if ((flag & 0x40) != 0) styleId += 4;
-        if (styleId >= 13) styleId = styleId % 13;
-        return styleId;
+        if ((flag & 0x10) != 0 && (flag & 0x20) != 0 && (flag & 0x40) != 0) return 3;
+        if ((flag & 0x10) != 0 && (flag & 0x20) != 0) return 3;
+        if ((flag & 0x10) != 0 && (flag & 0x40) != 0) return 3;
+        if ((flag & 0x20) != 0 && (flag & 0x40) != 0) return 3;
+        if ((flag & 0x10) != 0) return 1;
+        if ((flag & 0x20) != 0) return 2;
+        if ((flag & 0x40) != 0) return 3;
+        return 0;
     }
 
     private void rebuildFullText() {
