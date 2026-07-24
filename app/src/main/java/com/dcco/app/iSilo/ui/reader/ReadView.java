@@ -94,6 +94,7 @@ public class ReadView extends View {
 
         byte[] styleData = info.styleData;
         int styleDataLen = (styleData != null) ? styleData.length : 0;
+        DebugLog.add("STYLE_PASS", "styleDataLen=%d fontTable=%s", styleDataLen, info.fontTable != null ? "set" : "null");
 
         int charset = info != null ? info.charset : 0;
         FormattedText ft = resolver.resolveText(buffer, textSize, styleData, styleDataLen, null, 0, charset);

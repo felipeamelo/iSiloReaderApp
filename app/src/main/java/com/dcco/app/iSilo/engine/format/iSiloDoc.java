@@ -363,7 +363,8 @@ public class iSiloDoc extends DocFormat {
                     totalSpans, decRecords.size());
         }
 
-        DebugLog.add("DECOMPRESS_ALL", "total=%d bytes (%d records)", total, decRecords.size());
+        DebugLog.add("DECOMPRESS_ALL", "total=%d bytes (%d records) decStyleData=%d mergedSpans=%d",
+                total, decRecords.size(), decStyleData.size(), totalSpans);
     }
 
     private static boolean tryDecompressAll(byte[] data, int off, int words,

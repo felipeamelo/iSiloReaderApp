@@ -19,6 +19,49 @@ public class StyleTableParser {
         result.fontTable = buildDefaultFontTable(baseSize, fontAttr1, fontAttr2);
         result.styleData = new byte[0];
 
+        if (recordData == null || recordSize < 8) return result;
+
+        DebugLog.hex("STYLE_RECORD", recordData, 0, Math.min(recordSize, 64));
+
+        int fxOff = recordData[0] & 0xFF;
+        int subType = recordData[1] & 0xFF;
+
+        DebugLog.add("STYLE_PARSE", "byte[0]=%d byte[1]=%d recordSize=%d", fxOff, subType, recordSize);
+
+        if (fxOff < 4 || fxOff + 4 > recordSize) {
+            DebugLog.add("STYLE_PARSE", "invalid fx offset=%d", fxOff);
+            return result;
+        }
+
+        int entryCount = (recordData[fxOff + 2] & 0xFF);
+        int strideBase = (recordData[fxOff + 3] & 0xFF);
+        int fwOffIncr = (recordData[fxOff] & 0xFF);
+        int firstFwOff = fxOff + fwOffIncr;
+
+        DebugLog.add("STYLE_PARSE", "entryCount=%d strideBase=%d firstFwOff=%d",
+                entryCount, strideBase, firstFwOff);
+
+        if (entryCount == 0 || firstFwOff + 8 > recordSize) {
+            DebugLog.add("STYLE_PARSE", "no fw entries");
+            return result;
+        }
+
+        int pos = firstFwOff;
+        for (int i = 0; i < entryCount && pos + 8 <= recordSize; i++) {
+            int styleId = recordData[pos] & 0xFF;
+            int extraStride = recordData[pos + 1] & 0xFF;
+            int p1 = read16(recordData, pos + 2);
+            int p2 = read16(recordData, pos + 4);
+            int p3 = read16(recordData, pos + 6);
+
+            DebugLog.add("STYLE_FW", "  [%d] id=%d p1=%d p2=%d p3=%d extra=%d",
+                    i, styleId, p1, p2, p3, extraStride);
+
+            int entryStride = strideBase + ((extraStride + 2) & 0xFFFE);
+            if (entryStride < 8) entryStride = 8;
+            pos += entryStride;
+        }
+
         return result;
     }
 
