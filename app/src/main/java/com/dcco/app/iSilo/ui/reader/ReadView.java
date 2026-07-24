@@ -24,6 +24,7 @@ public class ReadView extends View {
     private Paint textPaint;
     private Paint bgPaint;
     private Paint headerPaint;
+    private Paint versionPaint;
 
     public ReadView(Context context) {
         super(context);
@@ -43,6 +44,11 @@ public class ReadView extends View {
         headerPaint.setColor(0xFF666666);
         headerPaint.setTextSize(14 * density);
         headerPaint.setAntiAlias(true);
+
+        versionPaint = new Paint();
+        versionPaint.setColor(0xFFAAAAAA);
+        versionPaint.setTextSize(11 * density);
+        versionPaint.setAntiAlias(true);
 
         currentPage = 0;
     }
@@ -203,6 +209,10 @@ public class ReadView extends View {
                     getWidth() - getPaddingRight() - titleW,
                     headerY, headerPaint);
         }
+
+        String versionStr = "v1.1.0";
+        float versionW = versionPaint.measureText(versionStr);
+        canvas.drawText(versionStr, getWidth() - getPaddingRight() - versionW, getHeight() - getPaddingBottom(), versionPaint);
 
         int contentTop = (int)(headerY + headerPaint.getTextSize() + 8);
 
