@@ -52,16 +52,8 @@ public class ReadActivity extends Activity {
             try {
                 readView.openDocument(doc);
             } catch (Exception e) {
-                copyLogToClipboard("openFile_error");
-                Toast.makeText(this, "Erro: " + e.getMessage() + " | Log copiado", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
-        }
-        copyLogToClipboard("openFile_done");
-        String log = DebugLog.get();
-        int logLen = log.length();
-        if (logLen > 0) {
-            String preview = log.length() > 80 ? log.substring(0, 80) + "..." : log;
-            Toast.makeText(this, "Log copiado (" + logLen + " chars): " + preview, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -103,22 +95,32 @@ public class ReadActivity extends Activity {
             }
             return doc;
         } catch (Exception e) {
-            String log = DebugLog.get();
-            try {
-                ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                cm.setPrimaryClip(ClipData.newPlainText("DebugLog", log));
-            } catch (Exception ignored) {}
             String msg = e.getMessage();
             if (msg == null) msg = e.getClass().getSimpleName();
-            String preview = log.length() > 100 ? log.substring(0, Math.min(100, log.length())) + "..." : log;
-            Toast.makeText(this, "Excepção: " + msg + " | Log copiado (" + log.length() + " chars)", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Excepção: " + msg, Toast.LENGTH_LONG).show();
             return null;
         }
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (readView != null) {
+            outState.putInt("currentPage", readView.getCurrentPage());
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        int savedPage = savedInstanceState.getInt("currentPage", 0);
+        if (readView != null && savedPage > 0) {
+            readView.goToPage(savedPage);
+        }
+    }
+
+    @Override
     protected void onDestroy() {
-        copyLogToClipboard("onDestroy");
         super.onDestroy();
         if (doc != null) doc.close();
         AppState.readActivity = null;

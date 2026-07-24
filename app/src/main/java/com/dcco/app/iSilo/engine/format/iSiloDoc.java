@@ -20,6 +20,7 @@ public class iSiloDoc extends DocFormat {
 
     private ArrayList<byte[]> decRecords;
     private ArrayList<Integer> decRecordSizes;
+    private ArrayList<byte[]> decStyleData;
     private int totalDecompressed;
 
     @Override
@@ -48,6 +49,7 @@ public class iSiloDoc extends DocFormat {
         this.rawRecordCount = recordCount;
         this.decRecords = new ArrayList<>();
         this.decRecordSizes = new ArrayList<>();
+        this.decStyleData = new ArrayList<>();
         this.totalDecompressed = 0;
 
         fullText = new byte[0];
@@ -71,18 +73,61 @@ public class iSiloDoc extends DocFormat {
             if (recType != 0x04 || recSub != 0x01) continue;
 
             DebugLog.hex("LINK_REC" + ri, rd, 0, Math.min(rd.length, 64));
-            DebugLog.add("LINK_REC" + ri, "size=%d", rd.length);
+            DebugLog.add("LINK_REC" + ri, "size=%d type=0x%02x sub=0x%02x", rd.length, recType, recSub);
 
-            int pos = 2;
-            while (pos + 3 < rd.length) {
+            int totalRead = rd.length;
+            int entryStart = rd[0] & 0xFF;
+            if (entryStart < 4 || entryStart >= totalRead) entryStart = 2;
+
+            int pos = entryStart;
+            while (pos + 5 <= totalRead) {
                 int entryType = rd[pos] & 0xFF;
                 if (entryType == 0) break;
-                int val = ((rd[pos + 1] & 0xFF) << 8) | (rd[pos + 2] & 0xFF);
-                DebugLog.add("LINK_ENTRY", "  rec=%d pos=%d type=0x%02x val=%d", ri, pos, entryType, val);
-                pos += 3;
+
+                int b1 = rd[pos + 1] & 0xFF;
+                int b2 = rd[pos + 2] & 0xFF;
+                int b3 = rd[pos + 3] & 0xFF;
+                int b4 = rd[pos + 4] & 0xFF;
+
+                if (entryType == 1 && pos + 8 <= totalRead) {
+                    int charOff = (b1 << 8) | b2;
+                    int targetOff = (b3 << 8) | b4;
+                    int len = rd[pos + 5] & 0xFF;
+                    int titleLen = rd[pos + 6] & 0xFF;
+
+                    String title = "";
+                    if (titleLen > 0 && pos + 7 + titleLen <= totalRead) {
+                        StringBuilder sb = new StringBuilder(titleLen);
+                        for (int ti = 0; ti < titleLen; ti++) {
+                            char c = (char) (rd[pos + 7 + ti] & 0xFF);
+                            if (c == 0) break;
+                            sb.append(c);
+                        }
+                        title = sb.toString();
+                    }
+
+                    LinkEntry link = new LinkEntry(charOff, targetOff, len, title);
+                    info.links.add(link);
+                    DebugLog.add("LINK_ENTRY", "  rec=%d charOff=%d target=%d len=%d title='%s'",
+                            ri, charOff, targetOff, len, title);
+                    pos += 7 + titleLen;
+                } else if (entryType == 2 && pos + 7 <= totalRead) {
+                    int targetOff = (b1 << 8) | b2;
+                    int charOff = (b3 << 8) | b4;
+                    int len = rd[pos + 5] & 0xFF;
+                    LinkEntry link = new LinkEntry(charOff, targetOff, len, "");
+                    info.links.add(link);
+                    DebugLog.add("LINK_ENTRY", "  rec=%d type=2 charOff=%d target=%d len=%d",
+                            ri, charOff, targetOff, len);
+                    pos += 6;
+                } else {
+                    DebugLog.add("LINK_UNKNOWN", "  rec=%d pos=%d type=%d %02x %02x %02x %02x",
+                            ri, pos, entryType, b1, b2, b3, b4);
+                    pos += 3;
+                }
             }
         }
-        DebugLog.add("LINKS", "found %d link records", info.links.size());
+        DebugLog.add("LINKS", "found %d link entries in %d records", info.links.size(), rawRecordCount);
     }
 
     private void extractStyleTable(byte[] record0Data, int record0Size) {
@@ -159,14 +204,23 @@ public class iSiloDoc extends DocFormat {
         int availWords = totalWords - offWords;
         if (availWords < 2) return false;
 
+        int blockUnitSize = (silxHeader != null) ? silxHeader.blockUnitSize : 8;
+        if (blockUnitSize <= 0) blockUnitSize = 8;
+
+        byte[] flagBytes = extractFlagBytes(rd, rd.length, blockUnitSize);
+
         ByteArrayOutputStream trial = new ByteArrayOutputStream(65536);
-        boolean ok = tryDecompressAll(rd, byteOff, availWords, trial);
+        java.util.ArrayList<Integer> blockSizes = new java.util.ArrayList<>();
+        boolean ok = tryDecompressAll(rd, byteOff, availWords, trial, blockSizes);
+
         if (ok && trial.size() > 0) {
             byte[] dec = trial.toByteArray();
+            byte[] styleSpanData = buildStyleSpans(blockSizes, flagBytes);
             decRecords.add(dec);
             decRecordSizes.add(dec.length);
+            decStyleData.add(styleSpanData);
             totalDecompressed += dec.length;
-            DebugLog.add("DECOMPRESS", "  lazy rec=%d: %d bytes", ri, dec.length);
+            DebugLog.add("DECOMPRESS", "  lazy rec=%d: %d bytes spans=%d", ri, dec.length, styleSpanData.length / 4);
             if (decRecords.size() == 1) {
                 DebugLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
             }
@@ -179,15 +233,19 @@ public class iSiloDoc extends DocFormat {
             if (availWords < 2) break;
 
             trial = new ByteArrayOutputStream(65536);
-            ok = tryDecompressAll(rd, byteOff, availWords, trial);
+            blockSizes.clear();
+            ok = tryDecompressAll(rd, byteOff, availWords, trial, blockSizes);
             if (ok && trial.size() > 0) {
                 byte[] dec = trial.toByteArray();
                 int score = scoreOutput(dec, Math.min(dec.length, 500));
                 if (score > 30) {
+                    byte[] styleSpanData = buildStyleSpans(blockSizes, flagBytes);
                     decRecords.add(dec);
                     decRecordSizes.add(dec.length);
+                    decStyleData.add(styleSpanData);
                     totalDecompressed += dec.length;
-                    DebugLog.add("DECOMPRESS", "  lazy rec=%d: off=%d score=%d %d bytes", ri, byteOff, score, dec.length);
+                    DebugLog.add("DECOMPRESS", "  lazy rec=%d: off=%d score=%d %d bytes spans=%d",
+                            ri, byteOff, score, dec.length, styleSpanData.length / 4);
                     if (decRecords.size() == 1) {
                         DebugLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
                     }
@@ -197,6 +255,64 @@ public class iSiloDoc extends DocFormat {
         }
 
         return false;
+    }
+
+    private byte[] extractFlagBytes(byte[] recordData, int recordSize, int blockUnitSize) {
+        int flagsStart = 4 + (blockUnitSize + 2) * 2;
+        if (flagsStart + blockUnitSize > recordSize) {
+            flagsStart = 24;
+            if (flagsStart + blockUnitSize > recordSize) {
+                return new byte[0];
+            }
+        }
+        byte[] flags = new byte[blockUnitSize];
+        for (int i = 0; i < blockUnitSize && flagsStart + i < recordSize; i++) {
+            flags[i] = recordData[flagsStart + i];
+        }
+        return flags;
+    }
+
+    private byte[] buildStyleSpans(java.util.ArrayList<Integer> blockSizes, byte[] flagBytes) {
+        if (blockSizes == null || blockSizes.isEmpty() || flagBytes == null || flagBytes.length == 0) {
+            return new byte[0];
+        }
+
+        java.util.ArrayList<byte[]> spans = new java.util.ArrayList<>();
+        int charOffset = 0;
+
+        for (int bi = 0; bi < blockSizes.size() && bi < flagBytes.length; bi++) {
+            int bSize = blockSizes.get(bi);
+            if (bSize <= 0) continue;
+
+            int flag = flagBytes[bi] & 0xFF;
+            int styleId = flagToStyleId(flag);
+
+            byte[] span = new byte[4];
+            span[0] = (byte) ((charOffset >> 8) & 0xFF);
+            span[1] = (byte) (charOffset & 0xFF);
+            span[2] = (byte) ((styleId >> 8) & 0xFF);
+            span[3] = (byte) (styleId & 0xFF);
+            spans.add(span);
+
+            charOffset += bSize;
+        }
+
+        if (spans.isEmpty()) return new byte[0];
+        byte[] result = new byte[spans.size() * 4];
+        for (int i = 0; i < spans.size(); i++) {
+            byte[] sp = spans.get(i);
+            System.arraycopy(sp, 0, result, i * 4, 4);
+        }
+        return result;
+    }
+
+    private int flagToStyleId(int flag) {
+        int styleId = 0;
+        if ((flag & 0x10) != 0) styleId += 1;
+        if ((flag & 0x20) != 0) styleId += 2;
+        if ((flag & 0x40) != 0) styleId += 4;
+        if (styleId >= 13) styleId = styleId % 13;
+        return styleId;
     }
 
     private void rebuildFullText() {
@@ -214,11 +330,43 @@ public class iSiloDoc extends DocFormat {
             pos += d.length;
         }
         info.textSize = total;
+
+        int totalSpans = 0;
+        for (int i = 0; i < decStyleData.size(); i++) {
+            totalSpans += decStyleData.get(i).length;
+        }
+        if (totalSpans > 0) {
+            byte[] merged = new byte[totalSpans];
+            int sp = 0;
+            int charOffAdjust = 0;
+            for (int i = 0; i < decStyleData.size(); i++) {
+                byte[] sd = decStyleData.get(i);
+                if (sd == null || sd.length == 0) {
+                    charOffAdjust += decRecordSizes.get(i);
+                    continue;
+                }
+                for (int j = 0; j < sd.length; j += 4) {
+                    int spanOff = ((sd[j] & 0xFF) << 8) | (sd[j + 1] & 0xFF);
+                    spanOff += charOffAdjust;
+                    merged[sp] = (byte) ((spanOff >> 8) & 0xFF);
+                    merged[sp + 1] = (byte) (spanOff & 0xFF);
+                    merged[sp + 2] = sd[j + 2];
+                    merged[sp + 3] = sd[j + 3];
+                    sp += 4;
+                }
+                charOffAdjust += decRecordSizes.get(i);
+            }
+            info.styleData = merged;
+            DebugLog.add("STYLE_MERGE", "merged %d span bytes across %d records",
+                    totalSpans, decRecords.size());
+        }
+
         DebugLog.add("DECOMPRESS_ALL", "total=%d bytes (%d records)", total, decRecords.size());
     }
 
     private static boolean tryDecompressAll(byte[] data, int off, int words,
-                                            ByteArrayOutputStream output) {
+                                            ByteArrayOutputStream output,
+                                            java.util.ArrayList<Integer> blockSizes) {
         try {
             HuffmanInflator inflator = new HuffmanInflator();
             int treeRes = inflator.GetTrees(data, off, words, 0);
@@ -239,6 +387,7 @@ public class iSiloDoc extends DocFormat {
                 if (result[0] <= 0) break;
 
                 output.write(buf, 0, result[0]);
+                if (blockSizes != null) blockSizes.add(result[0]);
                 blockCount++;
 
                 int blockBytes = inflator.getBytesConsumed();
