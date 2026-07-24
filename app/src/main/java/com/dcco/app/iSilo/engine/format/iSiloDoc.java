@@ -64,70 +64,7 @@ public class iSiloDoc extends DocFormat {
     private void extractLinks() {
         if (info == null) return;
         info.links = new java.util.ArrayList<>();
-
-        for (int ri = 0; ri < rawRecordCount; ri++) {
-            if (rawRecords[ri] == null || rawRecords[ri].length < 8) continue;
-            byte[] rd = rawRecords[ri];
-            int recType = rd[0] & 0xFF;
-            int recSub = rd[1] & 0xFF;
-            if (recType != 0x04 || recSub != 0x01) continue;
-
-            DebugLog.hex("LINK_REC" + ri, rd, 0, Math.min(rd.length, 64));
-            DebugLog.add("LINK_REC" + ri, "size=%d type=0x%02x sub=0x%02x", rd.length, recType, recSub);
-
-            int totalRead = rd.length;
-            int entryStart = rd[0] & 0xFF;
-            if (entryStart < 4 || entryStart >= totalRead) entryStart = 2;
-
-            int pos = entryStart;
-            while (pos + 5 <= totalRead) {
-                int entryType = rd[pos] & 0xFF;
-                if (entryType == 0) break;
-
-                int b1 = rd[pos + 1] & 0xFF;
-                int b2 = rd[pos + 2] & 0xFF;
-                int b3 = rd[pos + 3] & 0xFF;
-                int b4 = rd[pos + 4] & 0xFF;
-
-                if (entryType == 1 && pos + 8 <= totalRead) {
-                    int charOff = (b1 << 8) | b2;
-                    int targetOff = (b3 << 8) | b4;
-                    int len = rd[pos + 5] & 0xFF;
-                    int titleLen = rd[pos + 6] & 0xFF;
-
-                    String title = "";
-                    if (titleLen > 0 && pos + 7 + titleLen <= totalRead) {
-                        StringBuilder sb = new StringBuilder(titleLen);
-                        for (int ti = 0; ti < titleLen; ti++) {
-                            char c = (char) (rd[pos + 7 + ti] & 0xFF);
-                            if (c == 0) break;
-                            sb.append(c);
-                        }
-                        title = sb.toString();
-                    }
-
-                    LinkEntry link = new LinkEntry(charOff, targetOff, len, title);
-                    info.links.add(link);
-                    DebugLog.add("LINK_ENTRY", "  rec=%d charOff=%d target=%d len=%d title='%s'",
-                            ri, charOff, targetOff, len, title);
-                    pos += 7 + titleLen;
-                } else if (entryType == 2 && pos + 7 <= totalRead) {
-                    int targetOff = (b1 << 8) | b2;
-                    int charOff = (b3 << 8) | b4;
-                    int len = rd[pos + 5] & 0xFF;
-                    LinkEntry link = new LinkEntry(charOff, targetOff, len, "");
-                    info.links.add(link);
-                    DebugLog.add("LINK_ENTRY", "  rec=%d type=2 charOff=%d target=%d len=%d",
-                            ri, charOff, targetOff, len);
-                    pos += 6;
-                } else {
-                    DebugLog.add("LINK_UNKNOWN", "  rec=%d pos=%d type=%d %02x %02x %02x %02x",
-                            ri, pos, entryType, b1, b2, b3, b4);
-                    pos += 3;
-                }
-            }
-        }
-        DebugLog.add("LINKS", "found %d link entries in %d records", info.links.size(), rawRecordCount);
+        DebugLog.add("LINKS", "no link records parsed (TOC-based navigation)");
     }
 
     private void extractStyleTable(byte[] record0Data, int record0Size) {

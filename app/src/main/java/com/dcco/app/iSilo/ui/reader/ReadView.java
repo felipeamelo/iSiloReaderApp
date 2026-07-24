@@ -57,8 +57,29 @@ public class ReadView extends View {
                     && doc.getInfo().pageOffsets.length > 0) {
                 layout.setPageOffsets(doc.getInfo().pageOffsets);
             }
+            buildLinksFromTOC();
             requestLayout();
         }
+    }
+
+    private void buildLinksFromTOC() {
+        if (doc == null || doc.getInfo() == null || formattedText == null) return;
+        iSiloDocInfo info = doc.getInfo();
+        if (info.tocTitles == null || info.tocOffsets == null) return;
+        if (info.links == null) info.links = new java.util.ArrayList<>();
+
+        String fullText = formattedText.getPlainText();
+        for (int i = 0; i < info.tocTitles.length && i < info.tocOffsets.length; i++) {
+            String title = info.tocTitles[i];
+            if (title == null || title.isEmpty()) continue;
+            int idx = fullText.indexOf(title);
+            if (idx >= 0) {
+                LinkEntry link = new LinkEntry(idx, info.tocOffsets[i], title.length(), title);
+                info.links.add(link);
+                DebugLog.add("TOC_LINK", "title='%s' charOff=%d target=%d", title, idx, info.tocOffsets[i]);
+            }
+        }
+        DebugLog.add("TOC_LINK", "built %d link entries from TOC", info.links.size());
     }
 
     private FormattedText textToFormatted(DocFormat doc) {
@@ -312,6 +333,7 @@ public class ReadView extends View {
             }
             if (doc != null && doc.getInfo() != null && doc.getInfo().links != null && !doc.getInfo().links.isEmpty()) {
                 handleLinkTap(event);
+                return true;
             }
             return true;
         }
