@@ -149,39 +149,46 @@ public class DocFormats {
         iSiloDocInfo info = doc.getInfo();
         if (info == null) return;
 
-        int tocRecIdx = info.recordStarts[1];
-        int tocRecCount = info.recordCounts[1];
-        if (tocRecIdx <= 0 || tocRecCount <= 0) return;
-
-        DebugLog.add("TOC", "recIdx=%d count=%d", tocRecIdx, tocRecCount);
-
         java.util.ArrayList<String> titles = new java.util.ArrayList<>();
         java.util.ArrayList<Integer> offsets = new java.util.ArrayList<>();
 
-        for (int ri = 0; ri < tocRecCount; ri++) {
+        int[] recCount = new int[1];
+        int res = pdb.GetInfo(null, null, null, recCount, null, null);
+        int totalRecords = (!ErrorUtil.isError(res) && recCount[0] > 0) ? recCount[0] : 0;
+
+        for (int ri = 1; ri < totalRecords; ri++) {
             byte[][] recData = new byte[1][];
             int[] recSize = new int[1];
-            int res = pdb.GetRecord(tocRecIdx + ri, recSize, recData);
+            res = pdb.GetRecord(ri, recSize, recData);
             if (ErrorUtil.isError(res) || recData[0] == null || recSize[0] < 6) continue;
 
             byte[] rd = recData[0];
-            int pos = 0;
-            while (pos + 4 < recSize[0]) {
-                int off = read16(rd, pos);
-                int titleLen = rd[pos + 2] & 0xFF;
-                pos += 4;
-                if (pos + titleLen > recSize[0]) break;
-                if (titleLen > 0) {
-                    StringBuilder sb = new StringBuilder(titleLen);
-                    for (int i = 0; i < titleLen; i++) {
-                        char c = (char) (rd[pos + i] & 0xFF);
-                        if (c == 0) break;
-                        sb.append(c);
+            if ((rd[0] & 0xFF) != 0x04) continue;
+            int sub = rd[1] & 0xFF;
+            if (sub != 7 && sub != 8) continue;
+
+            DebugLog.add("TOC_REC", "ri=%d sub=%d size=%d", ri, sub, recSize[0]);
+
+            if (sub == 8) {
+                int pos = 2;
+                while (pos + 4 < recSize[0]) {
+                    int off = read16(rd, pos);
+                    int titleLen = rd[pos + 2] & 0xFF;
+                    pos += 4;
+                    if (pos + titleLen > recSize[0]) break;
+                    if (titleLen > 0) {
+                        StringBuilder sb = new StringBuilder(titleLen);
+                        for (int i = 0; i < titleLen; i++) {
+                            char c = (char) (rd[pos + i] & 0xFF);
+                            if (c == 0) break;
+                            sb.append(c);
+                        }
+                        titles.add(sb.toString());
+                        offsets.add(off);
+                        DebugLog.add("TOC_ENTRY", "  off=%d title='%s'", off, sb.toString());
                     }
-                    titles.add(sb.toString());
-                    offsets.add(off);
+                    pos += titleLen;
                 }
-                pos += titleLen;
             }
         }
 
@@ -191,7 +198,44 @@ public class DocFormats {
             for (int i = 0; i < offsets.size(); i++) {
                 info.tocOffsets[i] = offsets.get(i);
             }
-            DebugLog.add("TOC", "extracted %d entries", titles.size());
+            DebugLog.add("TOC", "extracted %d entries from sub=7/8 records", titles.size());
+        } else {
+            int tocRecIdx = info.recordStarts[1];
+            int tocRecCount = info.recordCounts[1];
+            if (tocRecIdx > 0 && tocRecCount > 0) {
+                DebugLog.add("TOC", "fallback: recIdx=%d count=%d", tocRecIdx, tocRecCount);
+                for (int ri = 0; ri < tocRecCount; ri++) {
+                    byte[][] rData = new byte[1][];
+                    int[] rSize = new int[1];
+                    res = pdb.GetRecord(tocRecIdx + ri, rSize, rData);
+                    if (ErrorUtil.isError(res) || rData[0] == null || rSize[0] < 6) continue;
+                    byte[] rd = rData[0];
+                    int pos = 0;
+                    while (pos + 4 < rSize[0]) {
+                        int off = read16(rd, pos);
+                        int titleLen = rd[pos + 2] & 0xFF;
+                        pos += 4;
+                        if (pos + titleLen > rSize[0]) break;
+                        if (titleLen > 0) {
+                            StringBuilder sb = new StringBuilder(titleLen);
+                            for (int i = 0; i < titleLen; i++) {
+                                char c = (char) (rd[pos + i] & 0xFF);
+                                if (c == 0) break;
+                                sb.append(c);
+                            }
+                            titles.add(sb.toString());
+                            offsets.add(off);
+                        }
+                        pos += titleLen;
+                    }
+                }
+                if (titles.size() > 0) {
+                    info.tocTitles = titles.toArray(new String[0]);
+                    info.tocOffsets = new int[offsets.size()];
+                    for (int i = 0; i < offsets.size(); i++) info.tocOffsets[i] = offsets.get(i);
+                    DebugLog.add("TOC", "fallback extracted %d entries", titles.size());
+                }
+            }
         }
     }
 
