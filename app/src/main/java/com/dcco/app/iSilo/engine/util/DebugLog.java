@@ -6,6 +6,7 @@ public class DebugLog {
 
     public static void clear() {
         log = new StringBuilder(8192);
+        log.append("=== iSiloReader v1.1.0 ===\n");
     }
 
     public static void add(String tag, String msg) {
