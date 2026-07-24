@@ -1,6 +1,7 @@
 package com.dcco.app.iSilo.engine.format;
 
 import com.dcco.app.iSilo.engine.PalmDB;
+import com.dcco.app.iSilo.engine.render.StyleTableParser;
 import com.dcco.app.iSilo.engine.util.DebugLog;
 import com.dcco.app.iSilo.engine.util.ErrorUtil;
 import com.dcco.app.iSilo.engine.util.HuffmanInflator;
@@ -53,6 +54,7 @@ public class iSiloDoc extends DocFormat {
         info.textSize = 0;
 
         extractLinks();
+        extractStyleTable(record0Data, record0Size);
         preloadFirstRecord();
         return 0;
     }
@@ -81,6 +83,48 @@ public class iSiloDoc extends DocFormat {
             }
         }
         DebugLog.add("LINKS", "found %d link records", info.links.size());
+    }
+
+    private void extractStyleTable(byte[] record0Data, int record0Size) {
+        if (silxHeader == null || info == null) return;
+        int a0 = (info.groupA != null && info.groupA.length > 0) ? info.groupA[0] : 0;
+        if (a0 <= 0) {
+            DebugLog.add("STYLE", "A[0] = 0, no style table");
+            return;
+        }
+
+        byte[] styleRec = null;
+        int styleRecSize = 0;
+
+        if (a0 == 0 && record0Data != null) {
+            styleRec = record0Data;
+            styleRecSize = record0Size;
+        } else if (rawRecords != null && a0 - 1 < rawRecordCount) {
+            styleRec = rawRecords[a0 - 1];
+            styleRecSize = (styleRec != null) ? styleRec.length : 0;
+        }
+
+        if (styleRec == null || styleRecSize < 4) {
+            DebugLog.add("STYLE", "style record not found at A[0]=%d", a0);
+            return;
+        }
+
+        DebugLog.hex("STYLE_REC", styleRec, 0, Math.min(styleRecSize, 64));
+
+        StyleTableParser.Result styleRes = StyleTableParser.parse(
+                styleRec, styleRecSize,
+                silxHeader.headerSize,
+                a0, silxHeader.bodyFontSize,
+                silxHeader.fontAttr1, silxHeader.fontAttr2);
+
+        if (styleRes.fontTable != null) {
+            info.fontTable = styleRes.fontTable;
+        }
+        if (styleRes.styleData != null && styleRes.styleData.length > 0) {
+            info.styleData = styleRes.styleData;
+            DebugLog.add("STYLE", "style data: %d bytes (%d spans)",
+                    styleRes.styleData.length, styleRes.styleData.length / 4);
+        }
     }
 
     private void preloadFirstRecord() {

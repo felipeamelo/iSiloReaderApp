@@ -26,6 +26,9 @@ public class iSiloDocInfo {
     public String[] tocTitles;
     public int[] tocOffsets;
 
+    public byte[] styleData;
+    public com.dcco.app.iSilo.engine.render.TextStyle[] fontTable;
+
     public static final int COMPRESSION_NONE = 0;
     public static final int COMPRESSION_LZ77 = 1;
     public static final int COMPRESSION_HUFFMAN = 2;

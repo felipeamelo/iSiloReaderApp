@@ -86,8 +86,17 @@ public class ReadView extends View {
         DebugLog.hex("TEXT_TO_FMT_BUF", buffer, 0, Math.min(40, res));
 
         StyleResolver resolver = new StyleResolver();
+
+        if (info.fontTable != null) {
+            resolver.setFontTable(info.fontTable);
+            resolver.setDefaultStyleId(0);
+        }
+
+        byte[] styleData = info.styleData;
+        int styleDataLen = (styleData != null) ? styleData.length : 0;
+
         int charset = info != null ? info.charset : 0;
-        FormattedText ft = resolver.resolveText(buffer, textSize, null, 0, null, 0, charset);
+        FormattedText ft = resolver.resolveText(buffer, textSize, styleData, styleDataLen, null, 0, charset);
         DebugLog.add("TEXT_TO_FMT", "resolveText: charset=%d ft=%s totalLen=%d", charset, ft, ft != null ? ft.getTotalLength() : -1);
         if (ft == null || ft.getTotalLength() == 0) {
             android.widget.Toast.makeText(getContext(), "Texto vazio após resolver", android.widget.Toast.LENGTH_LONG).show();
