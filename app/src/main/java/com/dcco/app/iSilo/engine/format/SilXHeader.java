@@ -1,6 +1,6 @@
 package com.dcco.app.iSilo.engine.format;
 
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 
 public class SilXHeader {
 
@@ -57,10 +57,10 @@ public class SilXHeader {
                 && d(8) == 'S' && d(9) == 'i'
                 && d(10) == 'l' && d(11) == 'o');
 
-        DebugLog.add("SILX_HEADER", "f(0)=%d d(2)=%d d(3)=%d d(4)=%d",
+        AppLog.add("SILX_HEADER", "f(0)=%d d(2)=%d d(3)=%d d(4)=%d",
                 headerSize, versionMajor, versionMinor, versionPatch);
-        DebugLog.add("SILX_HEADER", "magic=isSilo valid=%s", validMagic);
-        DebugLog.hex("SILX_RAW0", data, offset, 64);
+        AppLog.add("SILX_HEADER", "magic=isSilo valid=%s", validMagic);
+        AppLog.hex("SILX_RAW0", data, offset, 64);
 
         if (!validMagic) return -2028929015;
 
@@ -85,18 +85,18 @@ public class SilXHeader {
         lastPageIndex = f(56);
         embeddingType = f(58);
 
-        DebugLog.add("SILX_HEADER", "g(20)=totalTextSize=%d", totalTextSize);
-        DebugLog.add("SILX_HEADER", "f(24)=blockUnitSize=%d", blockUnitSize);
-        DebugLog.add("SILX_HEADER", "f(30)=pageCount=%d", pageCount);
-        DebugLog.add("SILX_HEADER", "f(32)=titleFontSz=%d f(34)=bodyFontSz=%d", titleFontSize, bodyFontSize);
-        DebugLog.add("SILX_HEADER", "f(36)=docFlags=0x%04x f(38)=encodingFlags=0x%04x", docFlags, encodingFlags);
-        DebugLog.add("SILX_HEADER", "g(40)=crc=0x%08x", crc);
-        DebugLog.add("SILX_HEADER", "d(52)=fontAttr1=0x%02x d(53)=fontAttr2=0x%02x", fontAttr1, fontAttr2);
-        DebugLog.add("SILX_HEADER", "f(56)=lastPageIdx=%d f(58)=embeddingType=%d", lastPageIndex, embeddingType);
-        DebugLog.add("SILX_HEADER", "g(48)highNibble=0x%08x", g(48));
+        AppLog.add("SILX_HEADER", "g(20)=totalTextSize=%d", totalTextSize);
+        AppLog.add("SILX_HEADER", "f(24)=blockUnitSize=%d", blockUnitSize);
+        AppLog.add("SILX_HEADER", "f(30)=pageCount=%d", pageCount);
+        AppLog.add("SILX_HEADER", "f(32)=titleFontSz=%d f(34)=bodyFontSz=%d", titleFontSize, bodyFontSize);
+        AppLog.add("SILX_HEADER", "f(36)=docFlags=0x%04x f(38)=encodingFlags=0x%04x", docFlags, encodingFlags);
+        AppLog.add("SILX_HEADER", "g(40)=crc=0x%08x", crc);
+        AppLog.add("SILX_HEADER", "d(52)=fontAttr1=0x%02x d(53)=fontAttr2=0x%02x", fontAttr1, fontAttr2);
+        AppLog.add("SILX_HEADER", "f(56)=lastPageIdx=%d f(58)=embeddingType=%d", lastPageIndex, embeddingType);
+        AppLog.add("SILX_HEADER", "g(48)highNibble=0x%08x", g(48));
 
         if (len < headerSize + 4) {
-            DebugLog.add("SILX_HEADER", "too short for group table");
+            AppLog.add("SILX_HEADER", "too short for group table");
             return 0;
         }
 
@@ -104,11 +104,11 @@ public class SilXHeader {
         groupCount = f(pos);
         int maxGroups = groupCount > 4 ? 4 : groupCount;
         pos += 2;
-        DebugLog.add("SILX_GROUPS", "count=%d", groupCount);
+        AppLog.add("SILX_GROUPS", "count=%d", groupCount);
         for (int i = 0; i < maxGroups; i++) {
             A[i] = f(pos);
             pos += 2;
-            DebugLog.add("SILX_GROUPS", "  A[%d]=%d", i, A[i]);
+            AppLog.add("SILX_GROUPS", "  A[%d]=%d", i, A[i]);
         }
         if (groupCount > 4) {
             pos += (groupCount - 4) * 2;
@@ -117,7 +117,7 @@ public class SilXHeader {
         int kCount = f(pos);
         pos += 2;
         int maxK = kCount > 18 ? 18 : kCount;
-        DebugLog.add("SILX_GROUPS", "kCount=%d", kCount);
+        AppLog.add("SILX_GROUPS", "kCount=%d", kCount);
         for (int i = 0; i < maxK; i++) {
             recordStarts[i] = f(pos);
             pos += 2;
@@ -126,7 +126,7 @@ public class SilXHeader {
             recordCounts[i] = f(pos);
             pos += 2;
         }
-        DebugLog.add("SILX_GROUPS", "  k[0]=%d B[0]=%d", recordStarts[0], recordCounts[0]);
+        AppLog.add("SILX_GROUPS", "  k[0]=%d B[0]=%d", recordStarts[0], recordCounts[0]);
 
         return 0;
     }

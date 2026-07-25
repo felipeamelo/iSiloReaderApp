@@ -11,7 +11,7 @@ import com.dcco.app.iSilo.engine.format.DocFormat;
 import com.dcco.app.iSilo.engine.format.iSiloDocInfo;
 import com.dcco.app.iSilo.engine.format.LinkEntry;
 import com.dcco.app.iSilo.engine.render.*;
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 
 public class ReadView extends View {
 
@@ -82,22 +82,22 @@ public class ReadView extends View {
             if (idx >= 0) {
                 LinkEntry link = new LinkEntry(idx, info.tocOffsets[i], title.length(), title);
                 info.links.add(link);
-                DebugLog.add("TOC_LINK", "title='%s' charOff=%d target=%d", title, idx, info.tocOffsets[i]);
+                AppLog.add("TOC_LINK", "title='%s' charOff=%d target=%d", title, idx, info.tocOffsets[i]);
             }
         }
-        DebugLog.add("TOC_LINK", "built %d link entries from TOC", info.links.size());
+        AppLog.add("TOC_LINK", "built %d link entries from TOC", info.links.size());
     }
 
     private FormattedText textToFormatted(DocFormat doc) {
         iSiloDocInfo info = doc.getInfo();
-        DebugLog.add("TEXT_TO_FMT", "info=%s", info);
+        AppLog.add("TEXT_TO_FMT", "info=%s", info);
         if (info == null) {
             android.widget.Toast.makeText(getContext(), "getInfo() == null", android.widget.Toast.LENGTH_LONG).show();
             return null;
         }
 
         int textSize = info.textSize;
-        DebugLog.add("TEXT_TO_FMT", "textSize=%d", textSize);
+        AppLog.add("TEXT_TO_FMT", "textSize=%d", textSize);
         if (textSize <= 0) {
             android.widget.Toast.makeText(getContext(), "textSize=" + textSize, android.widget.Toast.LENGTH_LONG).show();
             return null;
@@ -105,12 +105,12 @@ public class ReadView extends View {
 
         byte[] buffer = new byte[textSize];
         int res = doc.getText(0, textSize, buffer);
-        DebugLog.add("TEXT_TO_FMT", "getText(0,%d) returned %d", textSize, res);
+        AppLog.add("TEXT_TO_FMT", "getText(0,%d) returned %d", textSize, res);
         if (res < 0) {
             android.widget.Toast.makeText(getContext(), "getText() erro: " + res, android.widget.Toast.LENGTH_LONG).show();
             return null;
         }
-        DebugLog.hex("TEXT_TO_FMT_BUF", buffer, 0, Math.min(40, res));
+        AppLog.hex("TEXT_TO_FMT_BUF", buffer, 0, Math.min(40, res));
 
         StyleResolver resolver = new StyleResolver();
 
@@ -121,17 +121,17 @@ public class ReadView extends View {
 
         byte[] styleData = info.styleData;
         int styleDataLen = (styleData != null) ? styleData.length : 0;
-        DebugLog.add("STYLE_PASS", "styleDataLen=%d fontTable=%s", styleDataLen, info.fontTable != null ? "set" : "null");
+        AppLog.add("STYLE_PASS", "styleDataLen=%d fontTable=%s", styleDataLen, info.fontTable != null ? "set" : "null");
 
         int charset = info != null ? info.charset : 0;
         FormattedText ft = resolver.resolveText(buffer, textSize, styleData, styleDataLen, null, 0, charset);
-        DebugLog.add("TEXT_TO_FMT", "resolveText: charset=%d ft=%s totalLen=%d", charset, ft, ft != null ? ft.getTotalLength() : -1);
+        AppLog.add("TEXT_TO_FMT", "resolveText: charset=%d ft=%s totalLen=%d", charset, ft, ft != null ? ft.getTotalLength() : -1);
         if (ft == null || ft.getTotalLength() == 0) {
             android.widget.Toast.makeText(getContext(), "Texto vazio após resolver", android.widget.Toast.LENGTH_LONG).show();
             return null;
         }
         if (ft != null && ft.getTotalLength() > 0) {
-            DebugLog.add("TEXT_TO_FMT", "runCount=%d firstChars='%s'", ft.getRunCount(), ft.getPlainText().substring(0, Math.min(40, ft.getTotalLength())));
+            AppLog.add("TEXT_TO_FMT", "runCount=%d firstChars='%s'", ft.getRunCount(), ft.getPlainText().substring(0, Math.min(40, ft.getTotalLength())));
         }
         return ft;
     }

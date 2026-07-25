@@ -1,7 +1,7 @@
 package com.dcco.app.iSilo.engine.format;
 
 import com.dcco.app.iSilo.engine.PalmDB;
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 import com.dcco.app.iSilo.engine.util.ErrorUtil;
 
 public class DocFormats {
@@ -28,23 +28,23 @@ public class DocFormats {
         byte[] type = new byte[4];
         byte[] creator = new byte[4];
         int res = pdb.GetInfo(null, creator, type, null, null, null);
-        DebugLog.add("IDENTIFY", "GetInfo res=%d type=%s creator=%s",
+        AppLog.add("IDENTIFY", "GetInfo res=%d type=%s creator=%s",
                 res, new String(type), new String(creator));
         if (ErrorUtil.isError(res)) {
             lastDiagnostic = "GET_INFO_FAILED err=" + res;
             return FORMAT_UNKNOWN;
         }
 
-        DebugLog.add("IDENTIFY", "type=%s creator=%s", new String(type), new String(creator));
+        AppLog.add("IDENTIFY", "type=%s creator=%s", new String(type), new String(creator));
         if (arrayEquals(type, TYPE_SDOC)) {
             int[] versionOut = new int[1];
             int[] flagsOut = new int[1];
             res = getISiloVersion(pdb, versionOut, flagsOut);
             if (ErrorUtil.isError(res)) {
-                DebugLog.add("IDENTIFY", "getISiloVersion FAILED res=%d fallback ISILO3", res);
+                AppLog.add("IDENTIFY", "getISiloVersion FAILED res=%d fallback ISILO3", res);
                 return FORMAT_ISILO3;
             }
-            DebugLog.add("IDENTIFY", "version=0x%04x flags=0x%04x", versionOut[0], flagsOut[0]);
+            AppLog.add("IDENTIFY", "version=0x%04x flags=0x%04x", versionOut[0], flagsOut[0]);
             int version = versionOut[0];
             if (version >= 3) return FORMAT_ISILO3;
             if (version >= 2) return FORMAT_ISILO2;
@@ -65,12 +65,12 @@ public class DocFormats {
 
     public static DocFormat openFormat(PalmDB pdb) {
         int format = identifyFormat(pdb);
-        DebugLog.add("OPEN_FORMAT", "format=%d", format);
+        AppLog.add("OPEN_FORMAT", "format=%d", format);
         if (format == FORMAT_UNKNOWN) return null;
 
         int[] recordCount = new int[1];
         int res = pdb.GetInfo(null, null, null, recordCount, null, null);
-        DebugLog.add("OPEN_FORMAT", "GetInfo recordCount=%d", recordCount[0]);
+        AppLog.add("OPEN_FORMAT", "GetInfo recordCount=%d", recordCount[0]);
         if (ErrorUtil.isError(res)) {
             lastDiagnostic = "GET_RECORD_COUNT_FAILED err=" + res;
             return null;
@@ -100,7 +100,7 @@ public class DocFormats {
         byte[][] record0 = new byte[1][];
         int[] size0 = new int[1];
         int res = pdb.GetRecord(0, size0, record0);
-        DebugLog.add("OPEN_ISILO_DOC", "GetRecord(0) res=%d size=%d", res, size0[0]);
+        AppLog.add("OPEN_ISILO_DOC", "GetRecord(0) res=%d size=%d", res, size0[0]);
         if (ErrorUtil.isError(res)) {
             lastDiagnostic = "GET_RECORD0 err=" + res;
             return null;
@@ -108,22 +108,22 @@ public class DocFormats {
 
         iSiloDoc doc = new iSiloDoc();
         if (recordCount > 1) {
-            DebugLog.add("OPEN_ISILO_DOC", "loadRecords start=1 count=%d", recordCount - 1);
+            AppLog.add("OPEN_ISILO_DOC", "loadRecords start=1 count=%d", recordCount - 1);
             byte[][] records = loadRecords(pdb, 1, recordCount - 1);
             if (records == null) {
                 lastDiagnostic = "LOAD_RECORDS_NULL";
                 return null;
             }
-            DebugLog.add("OPEN_ISILO_DOC", "records loaded=%d", records.length);
+            AppLog.add("OPEN_ISILO_DOC", "records loaded=%d", records.length);
             for (int i = 0; i < records.length; i++) {
-                DebugLog.add("OPEN_ISILO_DOC", "  records[%d] size=%d", i, records[i] != null ? records[i].length : -1);
+                AppLog.add("OPEN_ISILO_DOC", "  records[%d] size=%d", i, records[i] != null ? records[i].length : -1);
             }
             res = doc.openWithRecords(record0[0], size0[0], records, recordCount - 1);
         } else {
-            DebugLog.add("OPEN_ISILO_DOC", "single record, no text records");
+            AppLog.add("OPEN_ISILO_DOC", "single record, no text records");
             res = doc.open(record0[0], size0[0]);
         }
-        DebugLog.add("OPEN_ISILO_DOC", "openWithRecords res=%d", res);
+        AppLog.add("OPEN_ISILO_DOC", "openWithRecords res=%d", res);
         if (ErrorUtil.isError(res)) {
             lastDiagnostic = "OPEN_ISILO err=" + res;
             return null;
@@ -136,7 +136,7 @@ public class DocFormats {
             while (len < 32 && nameBuf[len] != 0) len++;
             if (len > 0) {
                 doc.getInfo().title = new String(nameBuf, 0, len);
-                DebugLog.add("OPEN_ISILO_DOC", "title='%s'", doc.getInfo().title);
+                AppLog.add("OPEN_ISILO_DOC", "title='%s'", doc.getInfo().title);
             }
         }
 
@@ -167,7 +167,7 @@ public class DocFormats {
             int sub = rd[1] & 0xFF;
             if (sub != 7 && sub != 8) continue;
 
-            DebugLog.add("TOC_REC", "ri=%d sub=%d size=%d", ri, sub, recSize[0]);
+            AppLog.add("TOC_REC", "ri=%d sub=%d size=%d", ri, sub, recSize[0]);
 
             if (sub == 8) {
                 int pos = 2;
@@ -185,7 +185,7 @@ public class DocFormats {
                         }
                         titles.add(sb.toString());
                         offsets.add(off);
-                        DebugLog.add("TOC_ENTRY", "  off=%d title='%s'", off, sb.toString());
+                        AppLog.add("TOC_ENTRY", "  off=%d title='%s'", off, sb.toString());
                     }
                     pos += titleLen;
                 }
@@ -198,12 +198,12 @@ public class DocFormats {
             for (int i = 0; i < offsets.size(); i++) {
                 info.tocOffsets[i] = offsets.get(i);
             }
-            DebugLog.add("TOC", "extracted %d entries from sub=7/8 records", titles.size());
+            AppLog.add("TOC", "extracted %d entries from sub=7/8 records", titles.size());
         } else {
             int tocRecIdx = info.recordStarts[1];
             int tocRecCount = info.recordCounts[1];
             if (tocRecIdx > 0 && tocRecCount > 0) {
-                DebugLog.add("TOC", "fallback: recIdx=%d count=%d", tocRecIdx, tocRecCount);
+                AppLog.add("TOC", "fallback: recIdx=%d count=%d", tocRecIdx, tocRecCount);
                 for (int ri = 0; ri < tocRecCount; ri++) {
                     byte[][] rData = new byte[1][];
                     int[] rSize = new int[1];
@@ -233,7 +233,7 @@ public class DocFormats {
                     info.tocTitles = titles.toArray(new String[0]);
                     info.tocOffsets = new int[offsets.size()];
                     for (int i = 0; i < offsets.size(); i++) info.tocOffsets[i] = offsets.get(i);
-                    DebugLog.add("TOC", "fallback extracted %d entries", titles.size());
+                    AppLog.add("TOC", "fallback extracted %d entries", titles.size());
                 }
             }
         }
@@ -255,15 +255,15 @@ public class DocFormats {
             if (ErrorUtil.isError(res) || recData[0] == null || recSize[0] < 8) continue;
 
             byte[] rd = recData[0];
-            DebugLog.add("PAGE_TREE", "recIdx=%d size=%d", recIdx, recSize[0]);
-            DebugLog.hex("PAGE_TREE_REC", rd, 0, Math.min(recSize[0], 64));
+            AppLog.add("PAGE_TREE", "recIdx=%d size=%d", recIdx, recSize[0]);
+            AppLog.hex("PAGE_TREE_REC", rd, 0, Math.min(recSize[0], 64));
 
             int hdrStart = rd[0] & 0xFF;
             if (hdrStart <= 0 || hdrStart >= recSize[0]) continue;
 
             int d0 = rd[hdrStart] & 0xFF;
             int d3 = (hdrStart + 3 < recSize[0]) ? rd[hdrStart + 3] & 0xFF : 0;
-            DebugLog.add("PAGE_TREE", "  hdrStart=%d d0=%d d3=%d", hdrStart, d0, d3);
+            AppLog.add("PAGE_TREE", "  hdrStart=%d d0=%d d3=%d", hdrStart, d0, d3);
 
             int tableOff = hdrStart + d0;
             int entryCount = Math.min(d3 + 1, 2);
@@ -272,7 +272,7 @@ public class DocFormats {
                 if (tableOff + 4 > recSize[0]) break;
                 int subOff = read16(rd, tableOff + ei * 4);
                 int subCnt = read16(rd, tableOff + ei * 4 + 2);
-                DebugLog.add("PAGE_TREE", "  sub[%d]: off=%d cnt=%d", ei, subOff, subCnt);
+                AppLog.add("PAGE_TREE", "  sub[%d]: off=%d cnt=%d", ei, subOff, subCnt);
                 if (subCnt <= 0 || subOff <= 0 || subOff >= recSize[0]) continue;
 
                 int ebBase = subOff;
@@ -281,7 +281,7 @@ public class DocFormats {
                 int ebCount = read16(rd, ebBase + 6);
                 int ebLast = read32(rd, ebBase + 12);
 
-                DebugLog.add("PAGE_TREE", "    eb: d0=%d type=%d count=%d last=%d",
+                AppLog.add("PAGE_TREE", "    eb: d0=%d type=%d count=%d last=%d",
                         ebD0, ebType, ebCount, ebLast);
 
                 int dataOff = ebBase + ebD0;
@@ -334,7 +334,7 @@ public class DocFormats {
                 }
 
                 if (decoded > 0) {
-                    DebugLog.add("PAGE_TREE", "    decoded %d offsets, last=%d", decoded, offset);
+                    AppLog.add("PAGE_TREE", "    decoded %d offsets, last=%d", decoded, offset);
                 }
             }
         }
@@ -344,9 +344,9 @@ public class DocFormats {
             for (int i = 0; i < allOffsets.size(); i++) {
                 info.pageOffsets[i] = allOffsets.get(i);
             }
-            DebugLog.add("PAGE_TREE", "total pageOffsets=%d", info.pageOffsets.length);
+            AppLog.add("PAGE_TREE", "total pageOffsets=%d", info.pageOffsets.length);
         } else {
-            DebugLog.add("PAGE_TREE", "no page offsets found, will use fallback");
+            AppLog.add("PAGE_TREE", "no page offsets found, will use fallback");
         }
     }
 
@@ -431,17 +431,17 @@ public class DocFormats {
         byte[][] data = new byte[1][];
         int[] size = new int[1];
         int res = pdb.GetRecord(0, size, data);
-        DebugLog.add("GET_ISILO_VER", "GetRecord(0) res=%d size=%d", res, size[0]);
+        AppLog.add("GET_ISILO_VER", "GetRecord(0) res=%d size=%d", res, size[0]);
         if (ErrorUtil.isError(res)) {
             lastDiagnostic = "GET_RECORD0_IN_VERSION err=" + res;
             return res;
         }
         if (size[0] < 4) {
-            DebugLog.add("GET_ISILO_VER", "record0 too small: %d < 4", size[0]);
+            AppLog.add("GET_ISILO_VER", "record0 too small: %d < 4", size[0]);
             lastDiagnostic = "RECORD0_TOO_SMALL size=" + size[0];
             return ERR_CORRUPT;
         }
-        DebugLog.hex("GET_ISILO_VER_REC0", data[0], 0, Math.min(size[0], 32));
+        AppLog.hex("GET_ISILO_VER_REC0", data[0], 0, Math.min(size[0], 32));
 
         versionOut[0] = ((data[0][0] & 0xFF) << 8) | (data[0][1] & 0xFF);
         flagsOut[0] = ((data[0][2] & 0xFF) << 8) | (data[0][3] & 0xFF);

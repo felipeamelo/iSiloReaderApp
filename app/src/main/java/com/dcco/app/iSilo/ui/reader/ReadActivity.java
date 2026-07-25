@@ -15,7 +15,7 @@ import com.dcco.app.iSilo.engine.format.DocFormat;
 import com.dcco.app.iSilo.engine.format.DocFormats;
 import com.dcco.app.iSilo.engine.format.PalmDBImpl;
 import com.dcco.app.iSilo.engine.data.FileDataStream;
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 import com.dcco.app.iSilo.state.AppState;
 
 public class ReadActivity extends Activity {
@@ -59,8 +59,8 @@ public class ReadActivity extends Activity {
     }
 
     private DocFormat loadDocument(String filePath) {
-        DebugLog.clear();
-        DebugLog.add("LOAD_DOC", "filePath=%s", filePath);
+        AppLog.clear();
+        AppLog.add("LOAD_DOC", "filePath=%s", filePath);
         try {
             FileDataStream stream = new FileDataStream();
             int res = stream.open(filePath, 0);
@@ -130,9 +130,9 @@ public class ReadActivity extends Activity {
     private void copyLogToClipboard(String reason) {
         try {
             ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            String log = DebugLog.get();
+            String log = AppLog.get();
             if (log.length() > 0) {
-                cm.setPrimaryClip(ClipData.newPlainText("DebugLog", log));
+                cm.setPrimaryClip(ClipData.newPlainText("AppLog", log));
                 android.util.Log.d("ReadActivity", "Log copied (" + log.length() + " chars) reason=" + reason);
             }
         } catch (Exception ignored) {}
@@ -199,8 +199,8 @@ public class ReadActivity extends Activity {
         }
         if (item.getItemId() == 2) {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            String log = DebugLog.get();
-            ClipData clip = ClipData.newPlainText("DebugLog", log);
+            String log = AppLog.get();
+            ClipData clip = ClipData.newPlainText("AppLog", log);
             clipboard.setPrimaryClip(clip);
             String preview = log.length() > 200 ? log.substring(0, 200) + "..." : log;
             Toast.makeText(this, "Log copiado (" + log.length() + " chars): " + preview, Toast.LENGTH_LONG).show();

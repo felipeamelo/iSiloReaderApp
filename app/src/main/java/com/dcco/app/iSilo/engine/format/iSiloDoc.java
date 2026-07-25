@@ -2,7 +2,7 @@ package com.dcco.app.iSilo.engine.format;
 
 import com.dcco.app.iSilo.engine.PalmDB;
 import com.dcco.app.iSilo.engine.render.StyleTableParser;
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 import com.dcco.app.iSilo.engine.util.ErrorUtil;
 import com.dcco.app.iSilo.engine.util.HuffmanInflator;
 
@@ -25,23 +25,23 @@ public class iSiloDoc extends DocFormat {
 
     @Override
     public int open(byte[] record0Data, int record0Size) {
-        DebugLog.add("ISILODOC_OPEN", "record0Size=%d", record0Size);
-        DebugLog.hex("ISILODOC_RECORD0", record0Data, 0, Math.min(record0Size, 128));
+        AppLog.add("ISILODOC_OPEN", "record0Size=%d", record0Size);
+        AppLog.hex("ISILODOC_RECORD0", record0Data, 0, Math.min(record0Size, 128));
         silxHeader = new SilXHeader();
         int res = silxHeader.parse(record0Data, 0, record0Size);
         if (ErrorUtil.isError(res)) {
-            DebugLog.add("ISILODOC_OPEN", "FAILED res=%d", res);
+            AppLog.add("ISILODOC_OPEN", "FAILED res=%d", res);
             return res;
         }
         silxHeader.fillInfo(info);
-        DebugLog.add("ISILODOC_OPEN", "OK info.textSize=%d", info.textSize);
-        DebugLog.add("ISILODOC_OPEN", "info.formatVersion=%d docVersion=0x%04x", info.formatVersion, info.docVersion);
+        AppLog.add("ISILODOC_OPEN", "OK info.textSize=%d", info.textSize);
+        AppLog.add("ISILODOC_OPEN", "info.formatVersion=%d docVersion=0x%04x", info.formatVersion, info.docVersion);
         return 0;
     }
 
     public int openWithRecords(byte[] record0Data, int record0Size,
                                 byte[][] dataRecords, int recordCount) {
-        DebugLog.add("OPEN_WITH_RECS", "record0Size=%d recordCount=%d", record0Size, recordCount);
+        AppLog.add("OPEN_WITH_RECS", "record0Size=%d recordCount=%d", record0Size, recordCount);
         int res = open(record0Data, record0Size);
         if (ErrorUtil.isError(res)) return res;
 
@@ -64,14 +64,14 @@ public class iSiloDoc extends DocFormat {
     private void extractLinks() {
         if (info == null) return;
         info.links = new java.util.ArrayList<>();
-        DebugLog.add("LINKS", "no link records parsed (TOC-based navigation)");
+        AppLog.add("LINKS", "no link records parsed (TOC-based navigation)");
     }
 
     private void extractStyleTable(byte[] record0Data, int record0Size) {
         if (silxHeader == null || info == null) return;
         int a0 = (info.groupA != null && info.groupA.length > 0) ? info.groupA[0] : 0;
         if (a0 <= 0) {
-            DebugLog.add("STYLE", "A[0] = 0, no style table");
+            AppLog.add("STYLE", "A[0] = 0, no style table");
             return;
         }
 
@@ -87,11 +87,11 @@ public class iSiloDoc extends DocFormat {
         }
 
         if (styleRec == null || styleRecSize < 4) {
-            DebugLog.add("STYLE", "style record not found at A[0]=%d", a0);
+            AppLog.add("STYLE", "style record not found at A[0]=%d", a0);
             return;
         }
 
-        DebugLog.hex("STYLE_REC", styleRec, 0, Math.min(styleRecSize, 64));
+        AppLog.hex("STYLE_REC", styleRec, 0, Math.min(styleRecSize, 64));
 
         StyleTableParser.Result styleRes = StyleTableParser.parse(
                 styleRec, styleRecSize,
@@ -104,7 +104,7 @@ public class iSiloDoc extends DocFormat {
         }
         if (styleRes.styleData != null && styleRes.styleData.length > 0) {
             info.styleData = styleRes.styleData;
-            DebugLog.add("STYLE", "style data: %d bytes (%d spans)",
+            AppLog.add("STYLE", "style data: %d bytes (%d spans)",
                     styleRes.styleData.length, styleRes.styleData.length / 4);
         }
     }
@@ -127,7 +127,7 @@ public class iSiloDoc extends DocFormat {
         int recSub = rd[1] & 0xFF;
         if (recType != 0x04 || recSub != 0x00) return false;
 
-        DebugLog.add("DECOMPRESS", "lazy rec=%d size=%d", ri, rd.length);
+        AppLog.add("DECOMPRESS", "lazy rec=%d size=%d", ri, rd.length);
 
         int totalWords = rd.length / 4;
         int offWords = 9;
@@ -157,9 +157,9 @@ public class iSiloDoc extends DocFormat {
             decRecordSizes.add(dec.length);
             decStyleData.add(styleSpanData);
             totalDecompressed += dec.length;
-            DebugLog.add("DECOMPRESS", "  lazy rec=%d: %d bytes spans=%d", ri, dec.length, styleSpanData.length / 4);
+            AppLog.add("DECOMPRESS", "  lazy rec=%d: %d bytes spans=%d", ri, dec.length, styleSpanData.length / 4);
             if (decRecords.size() == 1) {
-                DebugLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
+                AppLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
             }
             return true;
         }
@@ -181,10 +181,10 @@ public class iSiloDoc extends DocFormat {
                     decRecordSizes.add(dec.length);
                     decStyleData.add(styleSpanData);
                     totalDecompressed += dec.length;
-                    DebugLog.add("DECOMPRESS", "  lazy rec=%d: off=%d score=%d %d bytes spans=%d",
+                    AppLog.add("DECOMPRESS", "  lazy rec=%d: off=%d score=%d %d bytes spans=%d",
                             ri, byteOff, score, dec.length, styleSpanData.length / 4);
                     if (decRecords.size() == 1) {
-                        DebugLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
+                        AppLog.hex("DECOMPRESS_TEXTHEAD", dec, 0, Math.min(30, dec.length));
                     }
                     return true;
                 }
@@ -296,11 +296,11 @@ public class iSiloDoc extends DocFormat {
                 charOffAdjust += decRecordSizes.get(i);
             }
             info.styleData = merged;
-            DebugLog.add("STYLE_MERGE", "merged %d span bytes across %d records",
+            AppLog.add("STYLE_MERGE", "merged %d span bytes across %d records",
                     totalSpans, decRecords.size());
         }
 
-        DebugLog.add("DECOMPRESS_ALL", "total=%d bytes (%d records) decStyleData=%d mergedSpans=%d",
+        AppLog.add("DECOMPRESS_ALL", "total=%d bytes (%d records) decStyleData=%d mergedSpans=%d",
                 total, decRecords.size(), decStyleData.size(), totalSpans);
     }
 

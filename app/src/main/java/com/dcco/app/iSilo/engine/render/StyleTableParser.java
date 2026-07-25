@@ -1,6 +1,6 @@
 package com.dcco.app.iSilo.engine.render;
 
-import com.dcco.app.iSilo.engine.util.DebugLog;
+import com.dcco.app.iSilo.engine.util.AppLog;
 
 public class StyleTableParser {
 
@@ -21,15 +21,15 @@ public class StyleTableParser {
 
         if (recordData == null || recordSize < 8) return result;
 
-        DebugLog.hex("STYLE_RECORD", recordData, 0, Math.min(recordSize, 64));
+        AppLog.hex("STYLE_RECORD", recordData, 0, Math.min(recordSize, 64));
 
         int fxOff = recordData[0] & 0xFF;
         int subType = recordData[1] & 0xFF;
 
-        DebugLog.add("STYLE_PARSE", "byte[0]=%d byte[1]=%d recordSize=%d", fxOff, subType, recordSize);
+        AppLog.add("STYLE_PARSE", "byte[0]=%d byte[1]=%d recordSize=%d", fxOff, subType, recordSize);
 
         if (fxOff < 4 || fxOff + 4 > recordSize) {
-            DebugLog.add("STYLE_PARSE", "invalid fx offset=%d", fxOff);
+            AppLog.add("STYLE_PARSE", "invalid fx offset=%d", fxOff);
             return result;
         }
 
@@ -38,11 +38,11 @@ public class StyleTableParser {
         int fwOffIncr = (recordData[fxOff] & 0xFF);
         int firstFwOff = fxOff + fwOffIncr;
 
-        DebugLog.add("STYLE_PARSE", "entryCount=%d strideBase=%d firstFwOff=%d",
+        AppLog.add("STYLE_PARSE", "entryCount=%d strideBase=%d firstFwOff=%d",
                 entryCount, strideBase, firstFwOff);
 
         if (entryCount == 0 || firstFwOff + 8 > recordSize) {
-            DebugLog.add("STYLE_PARSE", "no fw entries");
+            AppLog.add("STYLE_PARSE", "no fw entries");
             return result;
         }
 
@@ -54,7 +54,7 @@ public class StyleTableParser {
             int p2 = read16(recordData, pos + 4);
             int p3 = read16(recordData, pos + 6);
 
-            DebugLog.add("STYLE_FW", "  [%d] id=%d p1=%d p2=%d p3=%d extra=%d",
+            AppLog.add("STYLE_FW", "  [%d] id=%d p1=%d p2=%d p3=%d extra=%d",
                     i, styleId, p1, p2, p3, extraStride);
 
             int entryStride = strideBase + ((extraStride + 2) & 0xFFFE);

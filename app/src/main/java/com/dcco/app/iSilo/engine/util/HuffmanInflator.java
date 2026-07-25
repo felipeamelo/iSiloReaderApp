@@ -244,20 +244,20 @@ public class HuffmanInflator extends iSiloInflator {
 
     @Override
     public int GetTrees(byte[] buf, int offset, int length, int flags) {
-        DebugLog.add("HUF_GETTREES", "[%d] off=%d len=%d", id, offset, length);
-        DebugLog.hex("HUF_GETTREES_IN", buf, offset, Math.min(length * 4, 32));
+        AppLog.add("HUF_GETTREES", "[%d] off=%d len=%d", id, offset, length);
+        AppLog.hex("HUF_GETTREES_IN", buf, offset, Math.min(length * 4, 32));
         initRead(buf, offset, length);
 
         int nLit = readBits(5) + 257;
-        if (nLit > 286) { errCode = 3; DebugLog.add("HUF_GETTREES", "[%d] nLit=%d > 286 FAIL", id, nLit); return ERR_UNSUPPORTED; }
+        if (nLit > 286) { errCode = 3; AppLog.add("HUF_GETTREES", "[%d] nLit=%d > 286 FAIL", id, nLit); return ERR_UNSUPPORTED; }
 
         int nDist = readBits(5) + 1;
-        if (nDist > 30) { errCode = 3; DebugLog.add("HUF_GETTREES", "[%d] nDist=%d > 30 FAIL", id, nDist); return ERR_UNSUPPORTED; }
+        if (nDist > 30) { errCode = 3; AppLog.add("HUF_GETTREES", "[%d] nDist=%d > 30 FAIL", id, nDist); return ERR_UNSUPPORTED; }
 
         int nCL = readBits(4) + 4;
-        if (nCL > 19) { errCode = 3; DebugLog.add("HUF_GETTREES", "[%d] nCL=%d > 19 FAIL", id, nCL); return ERR_UNSUPPORTED; }
+        if (nCL > 19) { errCode = 3; AppLog.add("HUF_GETTREES", "[%d] nCL=%d > 19 FAIL", id, nCL); return ERR_UNSUPPORTED; }
 
-        DebugLog.add("HUF_GETTREES", "[%d] nLit=%d nDist=%d nCL=%d consumedBytes=%d",
+        AppLog.add("HUF_GETTREES", "[%d] nLit=%d nDist=%d nCL=%d consumedBytes=%d",
                 id, nLit, nDist, nCL, getBytesConsumed());
 
         byte[] clCodeLen = new byte[MAX_CL_SYMS];
@@ -265,7 +265,7 @@ public class HuffmanInflator extends iSiloInflator {
             clCodeLen[CL_ORDER[i]] = (byte) readBits(3);
         }
         if (errCode != 0) {
-            DebugLog.add("HUF_GETTREES", "[%d] CL codeLens read FAILED errCode=%d", id, errCode);
+            AppLog.add("HUF_GETTREES", "[%d] CL codeLens read FAILED errCode=%d", id, errCode);
             return ERR_UNSUPPORTED;
         }
 
@@ -273,37 +273,37 @@ public class HuffmanInflator extends iSiloInflator {
         byte[] clRight = new byte[MAX_TREE_CL];
         if (!buildTree(clLeft, null, clRight, clCodeLen, MAX_CL_SYMS)) {
             errCode = 4;
-            DebugLog.add("HUF_GETTREES", "[%d] CL buildTree FAILED", id);
+            AppLog.add("HUF_GETTREES", "[%d] CL buildTree FAILED", id);
             return ERR_UNSUPPORTED;
         }
 
         byte[] ll = new byte[286];
         if (!readCodeLens(clLeft, clRight, ll, nLit)) {
             errCode = 5;
-            DebugLog.add("HUF_GETTREES", "[%d] lit/len codeLens FAILED", id);
+            AppLog.add("HUF_GETTREES", "[%d] lit/len codeLens FAILED", id);
             return ERR_UNSUPPORTED;
         }
 
         if (!buildTree(litLeft, litAux, litRight, ll, 286)) {
             errCode = 5;
-            DebugLog.add("HUF_GETTREES", "[%d] lit/len buildTree FAILED", id);
+            AppLog.add("HUF_GETTREES", "[%d] lit/len buildTree FAILED", id);
             return ERR_UNSUPPORTED;
         }
 
         byte[] dist = new byte[30];
         if (!readCodeLens(clLeft, clRight, dist, nDist)) {
             errCode = 6;
-            DebugLog.add("HUF_GETTREES", "[%d] dist codeLens FAILED", id);
+            AppLog.add("HUF_GETTREES", "[%d] dist codeLens FAILED", id);
             return ERR_UNSUPPORTED;
         }
 
         if (!buildTree(distLeft, null, distRight, dist, 30)) {
             errCode = 6;
-            DebugLog.add("HUF_GETTREES", "[%d] dist buildTree FAILED", id);
+            AppLog.add("HUF_GETTREES", "[%d] dist buildTree FAILED", id);
             return ERR_UNSUPPORTED;
         }
 
-        DebugLog.add("HUF_GETTREES", "[%d] SUCCESS consumedBytes=%d", id, getBytesConsumed());
+        AppLog.add("HUF_GETTREES", "[%d] SUCCESS consumedBytes=%d", id, getBytesConsumed());
         return 0;
     }
 
@@ -311,9 +311,9 @@ public class HuffmanInflator extends iSiloInflator {
     public int InflateBlock(byte[] src, int srcOff, int srcWords,
                              byte[] dest, int destOff, int destLen,
                              int[] result) {
-        DebugLog.add("HUF_INFLATE", "[%d] srcOff=%d srcWords=%d destLen=%d",
+        AppLog.add("HUF_INFLATE", "[%d] srcOff=%d srcWords=%d destLen=%d",
                 id, srcOff, srcWords, destLen);
-        DebugLog.hex("HUF_INFLATE_IN", src, srcOff, Math.min(srcWords * 4, 32));
+        AppLog.hex("HUF_INFLATE_IN", src, srcOff, Math.min(srcWords * 4, 32));
         initRead(src, srcOff, srcWords);
         result[0] = 0;
         int outPos = 0;
@@ -323,7 +323,7 @@ public class HuffmanInflator extends iSiloInflator {
             int sym = decodeSym(litLeft, litRight, litAux, 286);
             if (sym < 256) {
                 if (outPos >= destLen) {
-                    DebugLog.add("HUF_INFLATE", "[%d] output full at %d", id, outPos);
+                    AppLog.add("HUF_INFLATE", "[%d] output full at %d", id, outPos);
                     result[0] = destLen;
                     return ERR_UNSUPPORTED;
                 }
@@ -331,7 +331,7 @@ public class HuffmanInflator extends iSiloInflator {
                 outPos++;
                 symCount++;
             } else if (sym == 256) {
-                DebugLog.add("HUF_INFLATE", "[%d] END_BLOCK sym=%d outPos=%d syms=%d",
+                AppLog.add("HUF_INFLATE", "[%d] END_BLOCK sym=%d outPos=%d syms=%d",
                         id, sym, outPos, symCount);
                 result[0] = outPos;
                 return 0;
@@ -376,7 +376,7 @@ public class HuffmanInflator extends iSiloInflator {
                 }
 
                 if (distance > outPos) {
-                    DebugLog.add("HUF_INFLATE", "[%d] dist=%d > outPos=%d FAIL", id, distance, outPos);
+                    AppLog.add("HUF_INFLATE", "[%d] dist=%d > outPos=%d FAIL", id, distance, outPos);
                     result[0] = outPos;
                     return ERR_UNSUPPORTED;
                 }
@@ -390,7 +390,7 @@ public class HuffmanInflator extends iSiloInflator {
             }
         }
 
-        DebugLog.add("HUF_INFLATE", "[%d] FINISHED errCode=%d outPos=%d", id, errCode, outPos);
+        AppLog.add("HUF_INFLATE", "[%d] FINISHED errCode=%d outPos=%d", id, errCode, outPos);
         result[0] = outPos;
         return 0;
     }
