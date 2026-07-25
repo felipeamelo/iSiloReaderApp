@@ -42,6 +42,7 @@ public class ReadActivity extends Activity {
 
         String filePath = getIntent().getStringExtra("filePath");
         if (filePath != null) {
+            Toast.makeText(this, "iSiloReader v1.1.1", Toast.LENGTH_SHORT).show();
             openFile(filePath);
         }
     }

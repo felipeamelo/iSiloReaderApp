@@ -210,7 +210,7 @@ public class ReadView extends View {
                     headerY, headerPaint);
         }
 
-        String versionStr = "v1.1.0";
+        String versionStr = "v1.1.1";
         float versionW = versionPaint.measureText(versionStr);
         canvas.drawText(versionStr, getWidth() - getPaddingRight() - versionW, getHeight() - getPaddingBottom(), versionPaint);
 

@@ -4,9 +4,13 @@ public class DebugLog {
 
     private static StringBuilder log = new StringBuilder(8192);
 
+    static {
+        log.append("=== iSiloReader v1.1.1 ===\n");
+    }
+
     public static void clear() {
         log = new StringBuilder(8192);
-        log.append("=== iSiloReader v1.1.0 ===\n");
+        log.append("=== iSiloReader v1.1.1 ===\n");
     }
 
     public static void add(String tag, String msg) {
