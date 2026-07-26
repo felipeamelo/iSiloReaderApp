@@ -60,6 +60,7 @@ public class ReadActivity extends Activity {
 
     private DocFormat loadDocument(String filePath) {
         AppLog.clear();
+        AppLog.add("APP", "=== iSiloReader v1.1.1 ===");
         AppLog.add("LOAD_DOC", "filePath=%s", filePath);
         try {
             FileDataStream stream = new FileDataStream();
